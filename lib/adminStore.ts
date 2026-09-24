@@ -95,10 +95,8 @@ async function getRemoteStore(): Promise<AdminStore | null> {
   const { data, error } = await supabase.from("admin_store").select("content").maybeSingle();
 
   if (error) {
-    if (error.code !== "PGRST116") {
-      console.warn("Supabase admin_store read failed:", error.message);
-    }
-    return null;
+    if (error.code === "PGRST116") return null;
+    throw new Error(`Supabase admin_store read failed: ${error.message}`);
   }
 
   if (!data?.content) {
@@ -149,6 +147,26 @@ export async function getAdminStore(): Promise<AdminStore> {
   }
 
   return readLocalStore();
+}
+
+export async function checkSupabaseConnection() {
+  if (!supabase) {
+    return { configured: false, database: false, storage: false, errors: ["Supabase環境変数が設定されていません。"] };
+  }
+
+  const errors: string[] = [];
+  const { error: databaseError } = await supabase.from("admin_store").select("id").limit(1);
+  if (databaseError) errors.push(`DB: ${databaseError.message}`);
+
+  const { error: storageError } = await supabase.storage.from("artwork-images").list("works", { limit: 1 });
+  if (storageError) errors.push(`Storage: ${storageError.message}`);
+
+  return {
+    configured: true,
+    database: !databaseError,
+    storage: !storageError,
+    errors,
+  };
 }
 
 export async function saveAdminStore(nextStore: AdminStore) {

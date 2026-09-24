@@ -15,8 +15,16 @@ type DashboardData = {
   boardPosts: Array<{ id: string; title: string; type?: string; date?: string; description?: string }>;
 };
 
+type ConnectionState = {
+  configured: boolean;
+  database: boolean;
+  storage: boolean;
+  errors?: string[];
+};
+
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [connection, setConnection] = useState<ConnectionState | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/insights")
@@ -33,6 +41,10 @@ export default function AdminDashboardPage() {
         works: [],
         boardPosts: [],
       }));
+    fetch("/api/health/supabase")
+      .then((response) => response.json())
+      .then((payload) => setConnection(payload))
+      .catch(() => setConnection({ configured: false, database: false, storage: false, errors: ["接続診断を取得できませんでした。"] }));
   }, []);
 
   if (!data) {
@@ -47,6 +59,13 @@ export default function AdminDashboardPage() {
         <header className="mb-8 border-b border-[#E6E6E6] pb-6">
           <p className="text-[0.7rem] uppercase tracking-[0.2em] text-[#737373]">管理者コンソール</p>
           <h1 className="mt-2 text-4xl font-light tracking-[-0.06em]">DYC PAPER 管理画面</h1>
+          {connection && (
+            <div className="mt-5 flex flex-wrap gap-3 text-xs">
+              <ConnectionBadge label="Supabase DB" ok={connection.database} />
+              <ConnectionBadge label="画像Storage" ok={connection.storage} />
+              {!connection.configured && <span className="text-[#A40000]">Supabase環境変数未設定</span>}
+            </div>
+          )}
         </header>
 
         <section className="grid gap-6 md:grid-cols-4">
@@ -89,6 +108,10 @@ export default function AdminDashboardPage() {
       </div>
     </main>
   );
+}
+
+function ConnectionBadge({ label, ok }: { label: string; ok: boolean }) {
+  return <span className={ok ? "border border-[#0D0D0D] px-3 py-1 text-[#0D0D0D]" : "border border-[#A40000] px-3 py-1 text-[#A40000]"}>{label}: {ok ? "接続済み" : "未接続"}</span>;
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
