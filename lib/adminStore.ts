@@ -106,6 +106,18 @@ async function getRemoteStore(): Promise<AdminStore | null> {
   }
 
   const parsed = data.content as Partial<AdminStore>;
+
+  // Supabase's initial seed row is intentionally empty. Bootstrap it from the
+  // repository seed once, then persist the first admin action back remotely.
+  const isEmptySeed =
+    Array.isArray(parsed.works) && parsed.works.length === 0 &&
+    Array.isArray(parsed.boardPosts) && parsed.boardPosts.length === 0 &&
+    Array.isArray(parsed.contacts) && parsed.contacts.length === 0;
+
+  if (isEmptySeed) {
+    return defaultStore;
+  }
+
   return {
     works: parsed.works ?? defaultStore.works,
     boardPosts: parsed.boardPosts ?? defaultStore.boardPosts,
@@ -124,7 +136,7 @@ async function saveRemoteStore(nextStore: AdminStore) {
 
   if (error) {
     console.warn("Supabase admin_store write failed:", error.message);
-    return false;
+    throw new Error(`Supabase admin_store write failed: ${error.message}`);
   }
 
   return true;

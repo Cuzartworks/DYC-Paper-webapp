@@ -2,14 +2,22 @@ import { NextRequest } from "next/server";
 import { createWork, deleteWork, listWorks, updateWorkStatus } from "@/lib/adminStore";
 
 export async function GET() {
-  const works = await listWorks();
-  return Response.json(works);
+  try {
+    const works = await listWorks();
+    return Response.json(works);
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "作品一覧を取得できませんでした。" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const payload = await request.json();
-  const work = await createWork(payload);
-  return Response.json(work, { status: 201 });
+  try {
+    const payload = await request.json();
+    const work = await createWork(payload);
+    return Response.json(work, { status: 201 });
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "作品を保存できませんでした。" }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: NextRequest) {
@@ -25,12 +33,16 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const payload = await request.json();
-  const work = await updateWorkStatus(payload.id, payload.status);
+  try {
+    const payload = await request.json();
+    const work = await updateWorkStatus(payload.id, payload.status);
 
-  if (!work) {
-    return Response.json({ error: "Work not found" }, { status: 404 });
+    if (!work) {
+      return Response.json({ error: "Work not found" }, { status: 404 });
+    }
+
+    return Response.json(work);
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "作品の状態を更新できませんでした。" }, { status: 500 });
   }
-
-  return Response.json(work);
 }

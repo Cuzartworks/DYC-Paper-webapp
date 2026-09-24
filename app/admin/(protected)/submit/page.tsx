@@ -34,9 +34,17 @@ export default function AdminSubmitPage() {
 
   useEffect(() => {
     fetch("/api/admin/works")
-      .then((response) => response.json())
-      .then((payload) => setWorks(payload))
-      .catch(() => setWorks([]));
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok || !Array.isArray(payload)) {
+          throw new Error(payload.error ?? "作品一覧を取得できませんでした。");
+        }
+        setWorks(payload);
+      })
+      .catch((reason: Error) => {
+        setWorks([]);
+        setError(reason.message);
+      });
   }, []);
 
   const total = useMemo(() => works.length, [works]);
@@ -44,6 +52,9 @@ export default function AdminSubmitPage() {
   const refreshWorks = async () => {
     const response = await fetch("/api/admin/works");
     const payload = await response.json();
+    if (!response.ok || !Array.isArray(payload)) {
+      throw new Error(payload.error ?? "作品一覧を取得できませんでした。");
+    }
     setWorks(payload);
   };
 
@@ -97,12 +108,23 @@ export default function AdminSubmitPage() {
   };
 
   const handleApprove = async (id: string) => {
-    await fetch("/api/admin/works", {
+    setError("");
+    const response = await fetch("/api/admin/works", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, status: "Approved" }),
     });
-    await refreshWorks();
+    const payload = await response.json();
+    if (!response.ok) {
+      setError(payload.error ?? "承認できませんでした。");
+      return;
+    }
+
+    try {
+      await refreshWorks();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "一覧を更新できませんでした。");
+    }
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
