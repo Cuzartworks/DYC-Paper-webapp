@@ -26,35 +26,36 @@ export function SubmissionForm({ locale }: { locale: "en" | "ja" }) {
       return;
     }
 
-    const response = await fetch("/api/works", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: `${selectedArtwork} — ${submitter.trim() || (isEnglish ? "Community submission" : "コミュニティ投稿")}`,
-        submitter: submitter.trim(),
-        artworkSlug: works.find((work) => work.title === selectedArtwork)?.slug,
-        technique: isEnglish ? "Community submission" : "コミュニティ投稿",
-        image,
-        imageWidth: 1200,
-        imageHeight: 1500,
-        description: {
-          en: message || "A community interpretation of an unfinished work.",
-          ja: message || "未完成の作品に新しい解釈を加えたコミュニティ作品です。",
-        },
-      }),
-    });
+    try {
+      const response = await fetch("/api/works", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `${selectedArtwork} — ${submitter.trim() || (isEnglish ? "Community submission" : "コミュニティ投稿")}`,
+          submitter: submitter.trim(),
+          artworkSlug: works.find((work) => work.title === selectedArtwork)?.slug,
+          technique: isEnglish ? "Community submission" : "コミュニティ投稿",
+          image,
+          imageWidth: 1200,
+          imageHeight: 1500,
+          description: {
+            en: message || "A community interpretation of an unfinished work.",
+            ja: message || "未完成の作品に新しい解釈を加えたコミュニティ作品です。",
+          },
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error);
 
-    if (!response.ok) {
-      setError(isEnglish ? "The submission could not be sent." : "投稿を送信できませんでした。");
       setIsSubmitting(false);
-      return;
+      setIsSuccess(true);
+      setImage("");
+      setMessage("");
+      setSubmitter("");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : isEnglish ? "The submission could not be sent." : "投稿を送信できませんでした。");
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    setImage("");
-    setMessage("");
-    setSubmitter("");
   };
 
   const handleFileChange = (file: File) => {

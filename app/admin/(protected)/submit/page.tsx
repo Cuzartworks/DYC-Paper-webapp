@@ -72,39 +72,40 @@ export default function AdminSubmitPage() {
 
     setIsSaving(true);
 
-    const response = await fetch("/api/admin/works", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: title.trim(),
-        year: Number(year),
-        technique: technique.trim() || "Community submission",
-        image,
-        imageWidth: Number(imageWidth),
-        imageHeight: Number(imageHeight),
-        description: { en: descriptionEn.trim(), ja: descriptionJa.trim() },
-        status,
-      }),
-    });
+    try {
+      const response = await fetch("/api/admin/works", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          year: Number(year),
+          technique: technique.trim() || "Community submission",
+          image,
+          imageWidth: Number(imageWidth),
+          imageHeight: Number(imageHeight),
+          description: { en: descriptionEn.trim(), ja: descriptionJa.trim() },
+          status,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error);
 
-    if (!response.ok) {
-      setError("作品を保存できませんでした。もう一度お試しください。");
+      setTitle("");
+      setYear("2025");
+      setTechnique("");
+      setImage("");
+      setImageName("");
+      setImageWidth("1200");
+      setImageHeight("1500");
+      setDescriptionEn("");
+      setDescriptionJa("");
+      setStatus("Approved");
+      await refreshWorks();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "作品を保存できませんでした。もう一度お試しください。");
+    } finally {
       setIsSaving(false);
-      return;
     }
-
-    setTitle("");
-    setYear("2025");
-    setTechnique("");
-    setImage("");
-    setImageName("");
-    setImageWidth("1200");
-    setImageHeight("1500");
-    setDescriptionEn("");
-    setDescriptionJa("");
-    setStatus("Approved");
-    setIsSaving(false);
-    await refreshWorks();
   };
 
   const handleApprove = async (id: string) => {
@@ -131,8 +132,8 @@ export default function AdminSubmitPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/") || file.size > 6 * 1024 * 1024) {
-      setError("画像ファイル（6MB以下）を選択してください。");
+    if (!file.type.startsWith("image/") || file.size > 3 * 1024 * 1024) {
+      setError("画像ファイル（3MB以下）を選択してください。");
       return;
     }
 
@@ -177,7 +178,7 @@ export default function AdminSubmitPage() {
 
           <label className="grid gap-2 text-sm">作品画像
             <input type="file" accept="image/*" onChange={handleImageChange} className="border border-[#E6E6E6] bg-white px-4 py-3 text-sm file:mr-4 file:border-0 file:bg-[#0D0D0D] file:px-4 file:py-3 file:text-white" />
-            <span className="text-xs text-[#737373]">{imageName || "画像を選択してください（6MB以下）"}</span>
+            <span className="text-xs text-[#737373]">{imageName || "画像を選択してください（3MB以下）"}</span>
           </label>
           {image && <img src={image} alt="選択した作品のプレビュー" className="max-h-[280px] w-full border border-[#E6E6E6] bg-white object-contain p-4" />}
 

@@ -28,16 +28,13 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetch("/api/admin/insights")
-      .then((response) => response.json())
-      .then((payload) => setData(payload))
-      .catch(() => setData({
-        insights: {
-          total: 0,
-          positives: 0,
-          followUps: 0,
-          channelBreakdown: [],
-          summary: "問い合わせデータはまだありません。",
-        },
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok || !payload.insights) throw new Error(payload.error ?? "ダッシュボードを取得できませんでした。");
+        setData(payload);
+      })
+      .catch((reason: Error) => setData({
+        insights: { total: 0, positives: 0, followUps: 0, channelBreakdown: [], summary: `エラー: ${reason.message}` },
         works: [],
         boardPosts: [],
       }));

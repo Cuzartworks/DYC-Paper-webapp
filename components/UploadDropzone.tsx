@@ -12,7 +12,7 @@ export function UploadDropzone({ onFileChange }: { onFileChange?: (file: File) =
     if (!nextFile) return;
 
     const isValidType = ["image/jpeg", "image/png"].includes(nextFile.type);
-    const isWithinSize = nextFile.size <= 15 * 1024 * 1024;
+    const isWithinSize = nextFile.size <= 3 * 1024 * 1024;
 
     if (!isValidType) {
       setError("Only JPG or PNG files are allowed.");
@@ -20,7 +20,7 @@ export function UploadDropzone({ onFileChange }: { onFileChange?: (file: File) =
     }
 
     if (!isWithinSize) {
-      setError("File must be 15MB or smaller.");
+      setError("File must be 3MB or smaller.");
       return;
     }
 
